@@ -22,14 +22,14 @@ export default function CompanyList({ company }) {
             Updated: {formatDistanceToNow(new Date(company.companyUpdatedAt))}{" "}
             ago
           </p>
-          <div className="border-t pt-4">
+          {/* <div className="border-t pt-4">
             <p className="text-sm font-semibold">
               Dealers: {company.dealers.length}
             </p>
             <p className="text-sm font-semibold">
               Requests: {company.requests.length}
             </p>
-          </div>
+          </div> */}
         </div>
       ))}
     </div>

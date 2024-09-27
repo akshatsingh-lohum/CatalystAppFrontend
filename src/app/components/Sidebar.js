@@ -1,49 +1,39 @@
-// src/app/components/Sidebar.js
 "use client";
+
 import { useState, useEffect } from "react";
 import Link from "next/link";
 
 export default function Sidebar() {
-  const [menuItems, setMenuItems] = useState([]);
   const [userRole, setUserRole] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
 
+  // Define menu items statically since they're not coming from the API
+  const menuItems = [
+    { href: "/", label: "Dashboard", roles: ["user", "admin"] },
+    { href: "/request", label: "Request", roles: ["user", "admin"] },
+    { href: "/user", label: "User", roles: ["admin"] },
+    { href: "/dealer", label: "Dealer", roles: ["user", "admin"] },
+    { href: "/company", label: "Company", roles: ["admin"] },
+  ];
+
   useEffect(() => {
-    async function fetchData() {
+    async function fetchUserRole() {
       try {
-        // Fetch menu items
-        const menuResponse = await fetch(
-          `${process.env.NEXT_PUBLIC_API_URL}/menu-items`
+        const response = await fetch(
+          `${process.env.NEXT_PUBLIC_API_URL}/userRole`
         );
-        if (!menuResponse.ok) throw new Error("Failed to fetch menu items");
-        const menuData = await menuResponse.json();
-
-        // Fetch user role (you'll need to implement this endpoint)
-        const userResponse = await fetch(
-          `${process.env.NEXT_PUBLIC_API_URL}/user-role`
-        );
-        if (!userResponse.ok) throw new Error("Failed to fetch user role");
-        const userData = await userResponse.json();
-
-        setMenuItems(menuData);
-        setUserRole(userData.role);
+        if (!response.ok) throw new Error("Failed to fetch user role");
+        const data = await response.json();
+        setUserRole(data.role);
       } catch (error) {
-        console.error("Error fetching data:", error);
-        // Fallback to default menu items if fetch fails
-        setMenuItems([
-          { href: "/", label: "Dashboard", roles: ["user", "admin"] },
-          { href: "/request", label: "Request", roles: ["user", "admin"] },
-          { href: "/user", label: "User", roles: ["admin"] },
-          { href: "/dealer", label: "Dealer", roles: ["admin"] },
-          { href: "/company", label: "Company", roles: ["admin"] },
-        ]);
+        console.error("Error fetching user role:", error);
         setUserRole("user"); // Default to lowest privilege
       } finally {
         setIsLoading(false);
       }
     }
 
-    fetchData();
+    fetchUserRole();
   }, []);
 
   if (isLoading) {
