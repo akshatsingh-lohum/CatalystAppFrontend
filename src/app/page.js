@@ -1,4 +1,4 @@
-// src/app/dashboard/page.js
+// src/app/page.js
 export default function DashboardPage() {
   return (
     <div className="space-y-6">
