@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { useAuth } from "../../../hooks/useAuth"; // Adjust the import path as needed
-import CompanyList from "../../components/CompanyList";
+import CompanyList from "@/app/fonts/components/Companylist";
 
 export default function CompanyPage() {
   const [companies, setCompanies] = useState([]);
