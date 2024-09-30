@@ -74,7 +74,7 @@ const RequestPage = ({ lotId, company, dealer }) => {
       </div>
 
       <div className="flex gap-2 h-full">
-        <div className="w-1/3 shadow-md flex-1 min-h-full">
+        <div className="w-1/3 shadow-md  flex-1 min-h-full">
           <h2 className="text-l font-semibold text-gray-500 mb-6">Timeline</h2>
           <div className="space-y-2">
             {stages.map((stage, index) => (
