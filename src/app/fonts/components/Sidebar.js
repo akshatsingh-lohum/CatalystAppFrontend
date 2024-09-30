@@ -1,64 +1,122 @@
 "use client";
 
-import { useState, useEffect } from "react";
-import Link from "next/link";
+import React from "react";
+import { useRouter } from "next/navigation";
 
-export default function Sidebar() {
-  const [userRole, setUserRole] = useState(null);
-  const [isLoading, setIsLoading] = useState(true);
+const menuItems = [
+  { href: "/dashboard", label: "Dashboard" },
+  { href: "/request", label: "Request" },
+  { href: "/user", label: "User" },
+  { href: "/dealer", label: "Dealer" },
+  { href: "/company", label: "Company" },
+  { href: "/logout", label: "Logout", isLogout: true },
+];
 
-  // Define menu items statically since they're not coming from the API
-  const menuItems = [
-    { href: "/dashboard", label: "Dashboard" },
-    { href: "/request", label: "Request" },
-    { href: "/user", label: "User" },
-    { href: "/dealer", label: "Dealer" },
-    { href: "/company", label: "Company" },
-    { href: "/logout", label: "Logout" },
-  ];
+const Sidebar = () => {
+  const router = useRouter();
 
-  useEffect(() => {
-    async function fetchUserRole() {
-      try {
-        const response = await fetch(
-          `${process.env.NEXT_PUBLIC_API_URL}/userRole`
-        );
-        if (!response.ok) throw new Error("Failed to fetch user role");
-        const data = await response.json();
-        setUserRole(data.role);
-      } catch (error) {
-        console.error("Error fetching user role:", error);
-        setUserRole("user"); // Default to lowest privilege
-      } finally {
-        setIsLoading(false);
+  const handleLogout = async () => {
+    try {
+      const response = await fetch("/logout", {
+        method: "POST",
+        credentials: "include",
+      });
+
+      if (response.ok) {
+        localStorage.removeItem("token");
+        sessionStorage.removeItem("token");
+        document.cookie =
+          "token=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;";
+        router.push("/");
+      } else {
+        console.error("Logout failed");
       }
+    } catch (error) {
+      console.error("Error during logout:", error);
     }
-
-    fetchUserRole();
-  }, []);
-
-  if (isLoading) {
-    return <div>Loading menu...</div>;
-  }
+  };
 
   return (
-    <nav className="bg-indigo-800 w-64 space-y-8 py-0 px-0 text-white">
-      <div className="">
+    <div className="sidebar">
+      <div className="logo">
         <img
-          src="/static/images/catalyst.png"
-          alt="Logo"
-          className="w-full h-full object-cover"
+          src="static/images/catalyst.png"
+          alt="Catalyst Logo"
+          className="logo-image"
         />
       </div>
-      {menuItems.map((item, index) => (
-        <Link
-          key={index}
-          href={item.href}
-          className="block py-2.5 px-4 rounded transition duration-200 hover:bg-indigo-700"
-        >
-          {item.label}
-        </Link>
-      ))}
-    </nav>
+      <nav>
+        <ul>
+          {menuItems.map((item) => (
+            <li key={item.href}>
+              {item.isLogout ? (
+                <button onClick={handleLogout}>{item.label}</button>
+              ) : (
+                <a href={item.href}>{item.label}</a>
+              )}
+            </li>
+          ))}
+        </ul>
+      </nav>
+      <style jsx>{`
+        .sidebar {
+          background: linear-gradient(to bottom, #667eea, #764ba2);
+          color: #ffffff;
+          width: 250px;
+          height: 100vh;
+          padding: 20px;
+          box-shadow: 2px 0 5px rgba(0, 0, 0, 0.1);
+          display: flex;
+          flex-direction: column;
+        }
+
+        .logo {
+          margin-bottom: 20px;
+          text-align: center;
+        }
+
+        nav {
+          flex-grow: 1;
+        }
+
+        ul {
+          list-style-type: none;
+          padding: 0;
+          margin: 0;
+        }
+
+        li {
+          margin-bottom: 10px;
+        }
+
+        a,
+        button {
+          display: block;
+          color: #ffffff;
+          text-decoration: none;
+          padding: 10px 15px;
+          border-radius: 5px;
+          transition: background-color 0.3s ease;
+          font-size: 16px;
+          width: 100%;
+          text-align: left;
+          background: none;
+          border: none;
+          cursor: pointer;
+        }
+
+        a:hover,
+        button:hover {
+          background-color: rgba(255, 255, 255, 0.1);
+        }
+
+        button {
+          margin-top: 20px;
+          border: 1px solid #ffffff;
+        }
+      `}</style>
+    </div>
   );
-}
+};
+
+export default Sidebar;

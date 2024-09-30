@@ -4,12 +4,20 @@ import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import Head from "next/head";
 
+// JWT token management functions
+const setToken = (token) => {
+  localStorage.setItem("jwtToken", token);
+};
+
 export default function AuthPage() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [name, setName] = useState("");
+  const [phone, setPhone] = useState("");
+  const [dealerId, setDealerId] = useState("");
   const [error, setError] = useState("");
   const [isSignUp, setIsSignUp] = useState(false);
+  const [isForgotPassword, setIsForgotPassword] = useState(false);
   const router = useRouter();
 
   useEffect(() => {
@@ -25,28 +33,60 @@ export default function AuthPage() {
     e.preventDefault();
     setError("");
 
+    if (isForgotPassword) {
+      console.log("Pressed on the button - Forgot Password");
+      if (!email) {
+        setError("Please enter your email.");
+        return;
+      }
+
+      try {
+        const response = await fetch("/forgot-password", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ email }),
+        });
+
+        if (response.ok) {
+          alert(
+            "If an account exists for this email, you will receive a password with the reset instructions."
+          );
+          setIsForgotPassword(false);
+        } else {
+          setError("An error occurred. Please try again.");
+        }
+      } catch (err) {
+        setError("An error occurred. Please try again.");
+      }
+      return;
+    }
+
     if (!email || !password) {
       setError("Please enter both email and password.");
       return;
     }
 
-    if (isSignUp && !name) {
-      setError("Please enter your name.");
-      return;
+    if (isSignUp) {
+      if (!name || !phone || !dealerId) {
+        setError("Please fill in all fields.");
+        return;
+      }
     }
 
     try {
-      const response = await fetch(`/api/${isSignUp ? "signup" : "login"}`, {
+      const response = await fetch(`/${isSignUp ? "signup" : "login"}`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email, password, name }),
+        body: JSON.stringify({ email, password, name, phone, dealerId }),
       });
 
       if (response.ok) {
+        const data = await response.json();
+        setToken(data.token);
         router.push("/dashboard");
       } else {
         const data = await response.json();
-        setError(data.message || "Authentication failed. Please try again.");
+        setError(data.error || "Authentication failed. Please try again.");
       }
     } catch (err) {
       setError("An error occurred. Please try again.");
@@ -55,10 +95,18 @@ export default function AuthPage() {
 
   const toggleMode = () => {
     setIsSignUp(!isSignUp);
+    setIsForgotPassword(false);
     setError("");
     setEmail("");
     setPassword("");
     setName("");
+    setPhone("");
+    setDealerId("");
+  };
+
+  const toggleForgotPassword = () => {
+    setIsForgotPassword(!isForgotPassword);
+    setError("");
   };
 
   return (
@@ -73,8 +121,7 @@ export default function AuthPage() {
         <div className="form-container sign-up-container">
           <form onSubmit={handleSubmit}>
             <h1>Create Account</h1>
-
-            <span>or use your email for registration</span>
+            <span>via your email for registration</span>
             <input
               type="text"
               placeholder="Name"
@@ -93,27 +140,51 @@ export default function AuthPage() {
               value={password}
               onChange={(e) => setPassword(e.target.value)}
             />
+            <input
+              type="tel"
+              placeholder="Phone"
+              value={phone}
+              onChange={(e) => setPhone(e.target.value)}
+            />
+            <input
+              type="text"
+              placeholder="Dealer ID"
+              value={dealerId}
+              onChange={(e) => setDealerId(e.target.value)}
+            />
             <button type="submit">Sign Up</button>
           </form>
         </div>
         <div className="form-container sign-in-container">
           <form onSubmit={handleSubmit}>
-            <h1>Sign in</h1>
-
+            <h1>{isForgotPassword ? "Reset Password" : "Sign in"}</h1>
             <input
               type="email"
               placeholder="Email"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
             />
-            <input
-              type="password"
-              placeholder="Password"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-            />
-            <a href="#">Forgot your password?</a>
-            <button type="submit">Sign In</button>
+            {!isForgotPassword && (
+              <input
+                type="password"
+                placeholder="Password"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+              />
+            )}
+            {!isForgotPassword && (
+              <a href="#" onClick={toggleForgotPassword}>
+                Forgot your password?
+              </a>
+            )}
+            <button type="submit">
+              {isForgotPassword ? "Reset Password" : "Sign In"}
+            </button>
+            {isForgotPassword && (
+              <a href="#" onClick={toggleForgotPassword}>
+                Back to Sign In
+              </a>
+            )}
           </form>
         </div>
         <div className="overlay-container">
