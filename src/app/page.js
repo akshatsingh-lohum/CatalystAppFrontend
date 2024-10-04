@@ -4,9 +4,8 @@ import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import Head from "next/head";
 
-// JWT token management functions
 const setToken = (token) => {
-  localStorage.setItem("jwtToken", token);
+  localStorage.setItem("token", token);
 };
 
 export default function AuthPage() {
@@ -15,14 +14,20 @@ export default function AuthPage() {
   const [name, setName] = useState("");
   const [phone, setPhone] = useState("");
   const [dealerId, setDealerId] = useState("");
+
   const [error, setError] = useState("");
+  const [showError, setShowError] = useState(false);
   const [isSignUp, setIsSignUp] = useState(false);
   const [isForgotPassword, setIsForgotPassword] = useState(false);
   const router = useRouter();
 
+  const baseUrl = process.env.NEXT_PUBLIC_API_URL || "";
+
   useEffect(() => {
     if (error) {
+      setShowError(true);
       const timer = setTimeout(() => {
+        setShowError(false);
         setError("");
       }, 3000);
       return () => clearTimeout(timer);
@@ -34,7 +39,6 @@ export default function AuthPage() {
     setError("");
 
     if (isForgotPassword) {
-      console.log("Pressed on the button - Forgot Password");
       if (!email) {
         setError("Please enter your email.");
         return;
@@ -74,11 +78,14 @@ export default function AuthPage() {
     }
 
     try {
-      const response = await fetch(`/${isSignUp ? "signup" : "login"}`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email, password, name, phone, dealerId }),
-      });
+      const response = await fetch(
+        `${baseUrl}/${isSignUp ? "signup" : "login"}`,
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ email, password, name, phone, dealerId }),
+        }
+      );
 
       if (response.ok) {
         const data = await response.json();
@@ -207,15 +214,13 @@ export default function AuthPage() {
             </div>
           </div>
         </div>
-        {error && <div className="error-message">{error}</div>}
+        {showError && (
+          <div className="error-message" role="alert">
+            {error}
+          </div>
+        )}
       </div>
-
       <style jsx global>{`
-        @import url("https://fonts.googleapis.com/css?family=Montserrat:400,800");
-
-        * {
-          box-sizing: border-box;
-        }
         @import url("https://fonts.googleapis.com/css?family=Montserrat:400,800");
 
         * {
@@ -416,14 +421,29 @@ export default function AuthPage() {
         }
 
         .error-message {
-          color: #ff3860;
-          background-color: #feecf0;
-          border: 1px solid #ff3860;
+          position: fixed;
+          bottom: 60px;
+          left: 50%;
+          transform: translateX(-50%);
+          color: #ffffff;
+          background-color: #ff3860;
           border-radius: 4px;
-          padding: 10px;
-          margin-top: 10px;
+          padding: 10px 20px;
           text-align: center;
           font-size: 14px;
+          z-index: 1000;
+          animation: fadeInOut 3s ease-in-out;
+        }
+
+        @keyframes fadeInOut {
+          0%,
+          100% {
+            opacity: 0;
+          }
+          10%,
+          90% {
+            opacity: 1;
+          }
         }
       `}</style>
     </>

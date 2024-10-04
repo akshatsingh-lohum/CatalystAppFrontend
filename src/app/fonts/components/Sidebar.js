@@ -1,14 +1,14 @@
 "use client";
 
-import React from "react";
 import { useRouter } from "next/navigation";
+import React from "react";
 
 const menuItems = [
   { href: "/dashboard", label: "Dashboard" },
   { href: "/request", label: "Request" },
-  { href: "/user", label: "User" },
-  { href: "/dealer", label: "Dealer" },
   { href: "/company", label: "Company" },
+  { href: "/dealer", label: "Dealer" },
+  { href: "/user", label: "User" },
   { href: "/logout", label: "Logout", isLogout: true },
 ];
 
