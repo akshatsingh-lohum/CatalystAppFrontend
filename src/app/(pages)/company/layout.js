@@ -1,7 +1,11 @@
 export const metadata = {
-  title: "Company",
+  title: "Company Dashboard",
 };
 
 export default function CompanyLayout({ children }) {
-  return <div>{children}</div>;
+  return (
+    <div className="min-h-screen bg-gray-100">
+      <main className="container mx-auto py-6">{children}</main>
+    </div>
+  );
 }

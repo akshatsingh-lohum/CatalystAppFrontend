@@ -1,7 +1,7 @@
 "use client";
 
-import { useAuth } from "../../../hooks/useAuth";
 import { Button } from "@/components/ui/button";
+import { Card, CardContent } from "@/components/ui/card";
 import {
   Dialog,
   DialogContent,
@@ -12,20 +12,19 @@ import {
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table";
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { DataGrid } from "@mui/x-data-grid";
 import { Plus } from "lucide-react";
 import React, { useState, useEffect } from "react";
 
-const DealerManagement = () => {
+const DealerPage = () => {
   const [dealers, setDealers] = useState([]);
-  const [companies, setCompanies] = useState([]);
-  const [isLoading, setIsLoading] = useState(true);
+  const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [openDialog, setOpenDialog] = useState(false);
   const [editingDealer, setEditingDealer] = useState(null);
@@ -34,62 +33,46 @@ const DealerManagement = () => {
     email: "",
     phone: "",
     address: "",
-    companyId: "",
   });
-  const { isAuthenticated, isLoading: authLoading, getToken } = useAuth();
+
+  const [searchTerm, setSearchTerm] = useState("");
+
+  const backendUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:3002";
 
   useEffect(() => {
-    if (!authLoading) {
-      fetchDealers();
-      fetchCompanies();
-    }
-  }, [isAuthenticated, authLoading]);
+    fetchDealers();
+  }, []);
 
-  async function fetchDealers() {
-    if (!isAuthenticated) {
-      setError("You must be logged in to view dealers");
-      setIsLoading(false);
-      return;
-    }
-
-    setIsLoading(true);
+  const fetchDealers = async () => {
     try {
-      const apiUrl = process.env.NEXT_PUBLIC_API_URL;
-      const token = getToken();
-      const response = await fetch(`${apiUrl}/dealer`, {
+      const token = localStorage.getItem("token");
+      const response = await fetch(`${backendUrl}/dealer`, {
         headers: {
           Authorization: `Bearer ${token}`,
         },
       });
 
       if (!response.ok) {
-        throw new Error("Failed to fetch dealer data");
+        throw new Error("Failed to fetch dealers. " + response.statusText);
       }
 
       const data = await response.json();
       setDealers(data);
-    } catch (error) {
-      console.error("Error fetching dealers:", error);
-      setError(error.message);
+    } catch (err) {
+      setError(err.message);
     } finally {
-      setIsLoading(false);
+      setLoading(false);
     }
-  }
-
-  async function fetchCompanies() {
-    // Similar to fetchDealers, but for companies
-    // This is needed to populate the company selection in the form
-  }
+  };
 
   const handleOpenDialog = (dealer = null) => {
     if (dealer) {
       setEditingDealer(dealer);
       setFormData({
         name: dealer.name,
-        email: dealer.email || "",
+        email: dealer.email,
         phone: dealer.phone || "",
         address: dealer.address || "",
-        companyId: dealer.companyId,
       });
     } else {
       setEditingDealer(null);
@@ -98,7 +81,6 @@ const DealerManagement = () => {
         email: "",
         phone: "",
         address: "",
-        companyId: "",
       });
     }
     setOpenDialog(true);
@@ -112,7 +94,6 @@ const DealerManagement = () => {
       email: "",
       phone: "",
       address: "",
-      companyId: "",
     });
   };
 
@@ -125,11 +106,10 @@ const DealerManagement = () => {
 
   const handleSubmit = async () => {
     try {
-      const apiUrl = process.env.NEXT_PUBLIC_API_URL;
-      const token = getToken();
+      const token = localStorage.getItem("token");
       const url = editingDealer
-        ? `${apiUrl}/dealer/${editingDealer.id}`
-        : `${apiUrl}/dealer`;
+        ? `${backendUrl}/dealer/${editingDealer.id}`
+        : `${backendUrl}/dealer`;
       const method = editingDealer ? "PUT" : "POST";
 
       const response = await fetch(url, {
@@ -148,16 +128,14 @@ const DealerManagement = () => {
       await fetchDealers();
       handleCloseDialog();
     } catch (error) {
-      console.error("Error saving dealer:", error);
       setError(error.message);
     }
   };
 
   const handleDelete = async (id) => {
     try {
-      const apiUrl = process.env.NEXT_PUBLIC_API_URL;
-      const token = getToken();
-      const response = await fetch(`${apiUrl}/dealer/${id}`, {
+      const token = localStorage.getItem("token");
+      const response = await fetch(`${backendUrl}/dealer/${id}`, {
         method: "DELETE",
         headers: {
           Authorization: `Bearer ${token}`,
@@ -170,62 +148,87 @@ const DealerManagement = () => {
 
       await fetchDealers();
     } catch (error) {
-      console.error("Error deleting dealer:", error);
       setError(error.message);
     }
   };
 
-  if (authLoading) return <div>Loading...</div>;
-  if (error) return <div>{error}</div>;
-  if (!isAuthenticated) return <div>Please log in to view dealers</div>;
+  const columns = [
+    { field: "name", headerName: "Name", flex: 1 },
+    { field: "email", headerName: "Email", flex: 1 },
+    { field: "phone", headerName: "Phone", flex: 1 },
+    { field: "address", headerName: "Address", flex: 1 },
+    {
+      field: "actions",
+      headerName: "Actions",
+      width: 200,
+      renderCell: (params) => (
+        <div className="flex items-center justify-center space-x-2 h-full w-full">
+          <Button onClick={() => handleOpenDialog(params.row)} size="sm">
+            Edit
+          </Button>
+          <Button
+            onClick={() => handleDelete(params.row.id)}
+            variant="destructive"
+            size="sm"
+          >
+            Delete
+          </Button>
+        </div>
+      ),
+    },
+  ];
+
+  const filteredDealers = dealers.filter(
+    (dealer) =>
+      dealer.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      dealer.email.toLowerCase().includes(searchTerm.toLowerCase())
+  );
+
+  if (loading) return <div>Loading...</div>;
+  if (error) return <div>Error: {error}</div>;
 
   return (
-    <div className="container mx-auto py-10">
-      <div className="flex justify-between items-center mb-4">
-        <h1 className="text-2xl font-bold">Dealer Management</h1>
-        <Button onClick={() => handleOpenDialog()}>
-          <Plus className="mr-2 h-4 w-4" /> Add Dealer
-        </Button>
-      </div>
+    <div className="flex flex-col p-4 bg-gray-100 h-full">
+      {/* Header Card */}
+      <Card className="mb-6">
+        <CardContent className="p-6">
+          <div className="flex justify-between">
+            <div>
+              <p className="text-md">Total Dealers</p>
+              <p className="text-primary">{dealers.length}</p>
+            </div>
+          </div>
+          <div className="mt-6 text-right">
+            <Button size="sm" onClick={() => handleOpenDialog()}>
+              <Plus className="mr-2 h-4 w-4" /> Add Dealer
+            </Button>
+          </div>
+        </CardContent>
+      </Card>
 
-      <Table>
-        <TableHeader>
-          <TableRow>
-            <TableHead>Name</TableHead>
-            <TableHead>Email</TableHead>
-            <TableHead>Phone</TableHead>
-            <TableHead>Address</TableHead>
-            <TableHead>Company</TableHead>
-            <TableHead>Actions</TableHead>
-          </TableRow>
-        </TableHeader>
-        <TableBody>
-          {dealers.map((dealer) => (
-            <TableRow key={dealer.id}>
-              <TableCell>{dealer.name}</TableCell>
-              <TableCell>{dealer.email}</TableCell>
-              <TableCell>{dealer.phone}</TableCell>
-              <TableCell>{dealer.address}</TableCell>
-              <TableCell>{dealer.companyId}</TableCell>
-              <TableCell>
-                <div className="flex space-x-2">
-                  <Button onClick={() => handleOpenDialog(dealer)} size="sm">
-                    Edit
-                  </Button>
-                  <Button
-                    onClick={() => handleDelete(dealer.id)}
-                    variant="destructive"
-                    size="sm"
-                  >
-                    Delete
-                  </Button>
-                </div>
-              </TableCell>
-            </TableRow>
-          ))}
-        </TableBody>
-      </Table>
+      {/* Dealers Table */}
+      <Card className="flex-grow overflow-auto">
+        <CardContent className="p-6">
+          <h3 className="text-lg font-semibold mb-4">Dealers</h3>
+          <div className="flex justify-between items-center mb-4">
+            <Input
+              placeholder="Search dealers..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              className="w-1/3"
+            />
+          </div>
+          <DataGrid
+            rows={filteredDealers}
+            columns={columns}
+            pageSize={6}
+            rowsPerPageOptions={[6, 10, 15]}
+            disableSelectionOnClick
+          />
+        </CardContent>
+      </Card>
 
+      {/* Edit/Add Dialog */}
       <Dialog open={openDialog} onOpenChange={setOpenDialog}>
         <DialogContent>
           <DialogHeader>
@@ -286,6 +289,31 @@ const DealerManagement = () => {
                 className="col-span-3"
               />
             </div>
+
+            <div className="grid grid-cols-4 items-center gap-4">
+              <label htmlFor="state" className="text-right">
+                State
+              </label>
+              <Input
+                id="state"
+                name="state"
+                value={formData.state}
+                onChange={handleInputChange}
+                className="col-span-3"
+              />
+            </div>
+            <div className="grid grid-cols-4 items-center gap-4">
+              <label htmlFor="zipCode" className="text-right">
+                Zip Code
+              </label>
+              <Input
+                id="zipCode"
+                name="zipCode"
+                value={formData.zipCode}
+                onChange={handleInputChange}
+                className="col-span-3"
+              />
+            </div>
           </div>
           <DialogFooter>
             <Button onClick={handleCloseDialog} variant="outline">
@@ -301,4 +329,4 @@ const DealerManagement = () => {
   );
 };
 
-export default DealerManagement;
+export default DealerPage;
