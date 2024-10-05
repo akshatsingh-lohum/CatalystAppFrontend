@@ -11,7 +11,7 @@ export default function CompanyList({ company }) {
         <div key={company.id} className="bg-white p-6 rounded-lg shadow-md">
           <h2 className="text-xl font-semibold mb-4">{company.companyName}</h2>
           <p className="text-sm text-gray-600 mb-2">
-            Status: {company.companyStatus}
+            Status: {company.activeStatus}
           </p>
           <p className="text-sm text-gray-600 mb-2">
             Created: {formatDistanceToNow(new Date(company.companyCreatedAt))}{" "}

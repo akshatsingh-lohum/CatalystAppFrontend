@@ -12,13 +12,6 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
 import { DataGrid } from "@mui/x-data-grid";
 import { Plus } from "lucide-react";
 import React, { useState, useEffect } from "react";
@@ -146,24 +139,36 @@ const CompanyPage = () => {
     }
   };
 
+  function formatDate(date) {
+    const day = date.getDate().toString().padStart(2, "0");
+    const month = date.toLocaleString("default", { month: "short" });
+    const year = date.getFullYear().toString().slice(-2);
+    const hours = date.getHours();
+    const minutes = date.getMinutes().toString().padStart(2, "0");
+    const ampm = hours >= 12 ? "pm" : "am";
+    const formattedHours = (hours % 12 || 12).toString();
+
+    return `${day} ${month} ${year} ${formattedHours}:${minutes}${ampm}`;
+  }
+
   const columns = [
     { field: "companyName", headerName: "Company Name", flex: 1 },
     {
-      field: "companyCreatedAt",
+      field: "createdAt",
       headerName: "Created At",
       flex: 1,
-      valueFormatter: (params) => new Date(params.value).toLocaleString(),
-    },
-    {
-      field: "companyUpdatedAt",
-      headerName: "Updated At",
-      flex: 1,
-      valueFormatter: (params) => new Date(params.value).toLocaleString(),
+      valueFormatter: (params) => {
+        if (params) {
+          const date = new Date(params);
+          return formatDate(date);
+        }
+        return "Invalid Date";
+      },
     },
     {
       field: "actions",
       headerName: "Actions",
-      flex: 1,
+      width: 200,
       renderCell: (params) => (
         <div className="flex items-center justify-center space-x-2 h-full w-full">
           <Button onClick={() => handleOpenDialog(params.row)} size="sm">
@@ -191,7 +196,6 @@ const CompanyPage = () => {
 
   return (
     <div className="flex flex-col p-4 bg-gray-100 h-full">
-      {/* Header Card */}
       <Card className="mb-6">
         <CardContent className="p-6">
           <div className="flex justify-between">
@@ -208,7 +212,6 @@ const CompanyPage = () => {
         </CardContent>
       </Card>
 
-      {/* Companies Table */}
       <Card className="flex-grow overflow-auto">
         <CardContent className="p-6">
           <h3 className="text-lg font-semibold mb-4">Companies</h3>
@@ -230,7 +233,6 @@ const CompanyPage = () => {
         </CardContent>
       </Card>
 
-      {/* Edit/Add Dialog */}
       <Dialog open={openDialog} onOpenChange={setOpenDialog}>
         <DialogContent>
           <DialogHeader>
