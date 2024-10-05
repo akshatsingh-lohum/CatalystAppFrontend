@@ -1,8 +1,18 @@
 "use client";
 
+import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
-import { CheckCircle, Circle } from "lucide-react";
-import React, { useState } from "react";
+import { Progress } from "@/components/ui/progress";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { DataGrid } from "@mui/x-data-grid";
+import { Plus } from "lucide-react";
+import { useState } from "react";
 
 const STAGE = {
   REQUEST: "Request",
@@ -15,25 +25,59 @@ const STAGE = {
   REQUEST_COMPLETE: "Request Complete",
 };
 
-const stageStatus = {
-  Request: true,
-  "Security Check": true,
-  Warehouse: true,
-  Incineration: false,
-  Vault: false,
-  Production: false,
-  Dispatch: false,
-  "Request Complete": false,
-};
+const completedRequests = [
+  {
+    id: 1,
+    lotId: "LOT001",
+    status: "Processing",
+    stage: STAGE.REQUEST,
+    requestRaiseDate: "2021-10-01",
+  },
+  {
+    id: 2,
+    lotId: "LOT002",
+    status: "Processing",
+    stage: STAGE.SECURITY_CHECK,
+    requestRaiseDate: "2021-10-01",
+  },
+  {
+    id: 3,
+    lotId: "LOT003",
+    status: "Processing",
+    stage: STAGE.WAREHOUSE,
+    requestRaiseDate: "2021-10-01",
+  },
+  {
+    id: 8,
+    lotId: "LOT008",
+    status: "Completed",
+    stage: STAGE.REQUEST_COMPLETE,
+    requestRaiseDate: "2021-10-04",
+  },
+];
 
-const RequestPage = ({ lotId, company, dealer }) => {
-  const [selectedStage, setSelectedStage] = useState(null);
-  const stages = Object.values(STAGE);
-  const completedStages = stages.filter((stage) => stageStatus[stage]).length;
+const columns = [
+  { field: "lotId", headerName: "Lot ID", flex: 1 },
+  { field: "stage", headerName: "Stage", flex: 1 },
+  { field: "requestRaiseDate", headerName: "Request Raise Date", flex: 1 },
+];
 
-  const renderStageDetails = () => {
-    // ... (keep the existing renderStageDetails function)
-  };
+const RequestPage = ({ company, dealer }) => {
+  const [stageFilter, setStageFilter] = useState("ALL");
+
+  const totalRequests = completedRequests.length;
+  const completedRequestsCount = completedRequests.filter(
+    (req) => req.status === "Completed"
+  ).length;
+
+  const stageCounts = Object.values(STAGE).reduce((acc, stage) => {
+    acc[stage] = completedRequests.filter((req) => req.stage === stage).length;
+    return acc;
+  }, {});
+
+  const filteredRequests = completedRequests.filter(
+    (request) => stageFilter === "ALL" || request.stage === stageFilter
+  );
 
   return (
     <div className="flex flex-col p-4 bg-gray-100 h-full">
@@ -50,49 +94,64 @@ const RequestPage = ({ lotId, company, dealer }) => {
               <p>{dealer?.name || "N/A"}</p>
             </div>
             <div>
-              <p className="text-md">Lot ID</p>
-              <p className="text-primary">{lotId}</p>
+              <p className="text-md">Total Requests</p>
+              <p className="text-primary">{totalRequests}</p>
             </div>
             <div>
-              <p className="text-md">Completed Stages</p>
-              <p className="text-green-500">
-                {completedStages} / {stages.length}
-              </p>
+              <p className="text-md">Completed Requests</p>
+              <p className="text-green-500">{completedRequestsCount}</p>
             </div>
+          </div>
+          <div className="mt-6 text-right">
+            <Button size="sm">
+              <Plus className="mr-2 h-4 w-4" /> New Lot Request
+            </Button>
           </div>
         </CardContent>
       </Card>
 
-      {/* Main Content */}
+      {/* Funnel Section */}
       <div className="flex gap-6">
-        {/* Stage Progress */}
         <Card className="w-1/4 overflow-auto">
           <CardContent className="p-6">
-            <h3 className="text-lg font-semibold mb-6">Stage Progress</h3>
-            {stages.map((stage) => (
-              <div
-                key={stage}
-                className="mb-4 cursor-pointer flex justify-between items-center hover:bg-gray-100 p-2 rounded"
-                onClick={() => setSelectedStage(stage)}
-              >
-                <span>{stage}</span>
-                {stageStatus[stage] ? (
-                  <CheckCircle className="w-5 h-5 text-green-500" />
-                ) : (
-                  <Circle className="w-5 h-5 text-yellow-500" />
-                )}
+            <h3 className="text-lg font-semibold mb-4">Lot Funnel</h3>
+            {Object.entries(stageCounts).map(([stage, count]) => (
+              <div key={stage} className="mb-4">
+                <div className="flex justify-between mb-2">
+                  <span>{stage}</span>
+                  <span>{count}</span>
+                </div>
+                <Progress
+                  value={(count / totalRequests) * 100}
+                  className="h-3"
+                />
               </div>
             ))}
           </CardContent>
         </Card>
 
-        {/* Stage Details */}
+        {/* Data Grid */}
         <Card className="flex-grow overflow-auto">
           <CardContent className="p-6">
-            <h3 className="text-lg font-semibold mb-4">
-              {selectedStage || "Select a stage"}
-            </h3>
-            <div className="mt-4">{renderStageDetails()}</div>
+            <h3 className="text-lg font-semibold mb-4">Lots</h3>
+            <div className="flex justify-end gap-4 mb-4">
+              <Select onValueChange={setStageFilter}>
+                <SelectTrigger className="w-[180px]">
+                  <SelectValue placeholder="Stage" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="ALL">All</SelectItem>
+                  {Object.values(STAGE).map((stage) => (
+                    <SelectItem key={stage} value={stage}>
+                      {stage}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <div style={{ height: 400, width: "100%" }}>
+              <DataGrid rows={filteredRequests} columns={columns} />
+            </div>
           </CardContent>
         </Card>
       </div>

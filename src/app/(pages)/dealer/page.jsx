@@ -65,6 +65,26 @@ const DealerPage = () => {
     }
   };
 
+  const fetchCompanies = async () => {
+    try {
+      const token = localStorage.getItem("token");
+      const response = await fetch(`${backendUrl}/company`, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+
+      if (!response.ok) {
+        throw new Error("Failed to fetch companies. " + response.statusText);
+      }
+
+      const data = await response.json();
+      setCompanies(data);
+    } catch (err) {
+      setError(err.message);
+    }
+  };
+
   const handleOpenDialog = (dealer = null) => {
     if (dealer) {
       setEditingDealer(dealer);
@@ -285,31 +305,6 @@ const DealerPage = () => {
                 id="address"
                 name="address"
                 value={formData.address}
-                onChange={handleInputChange}
-                className="col-span-3"
-              />
-            </div>
-
-            <div className="grid grid-cols-4 items-center gap-4">
-              <label htmlFor="state" className="text-right">
-                State
-              </label>
-              <Input
-                id="state"
-                name="state"
-                value={formData.state}
-                onChange={handleInputChange}
-                className="col-span-3"
-              />
-            </div>
-            <div className="grid grid-cols-4 items-center gap-4">
-              <label htmlFor="zipCode" className="text-right">
-                Zip Code
-              </label>
-              <Input
-                id="zipCode"
-                name="zipCode"
-                value={formData.zipCode}
                 onChange={handleInputChange}
                 className="col-span-3"
               />
