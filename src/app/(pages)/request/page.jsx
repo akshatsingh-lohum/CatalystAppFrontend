@@ -13,7 +13,7 @@ import {
 import { DataGrid } from "@mui/x-data-grid";
 import { Plus } from "lucide-react";
 import Link from "next/link";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 
 const STAGE = {
   REQUEST: "Request",
@@ -76,6 +76,32 @@ const columns = [
 
 const RequestPage = ({ company, dealer }) => {
   const [stageFilter, setStageFilter] = useState("ALL");
+  const [userDetails, setUserDetails] = useState(null);
+
+  useEffect(() => {
+    const backendUrl =
+      process.env.NEXT_PUBLIC_API_URL || "http://localhost:3002";
+    const token = localStorage.getItem("token");
+    const fetchUserDetails = async () => {
+      try {
+        const response = await fetch(`${backendUrl}/other/detailsFromJwt`, {
+          headers: { Authorization: `Bearer ${token}` },
+        });
+        if (!response.ok) {
+          throw new Error("Failed to fetch user details");
+        }
+        const data = await response.json();
+        console.log(
+          `Page: request/[id]/page.jsx data: Company ${data.companyId} , ${data.companyName}, Dealer - ${data.dealerId} , ${data.dealerName}`
+        );
+        setUserDetails(data);
+      } catch (error) {
+        console.error("Error fetching user details:", error);
+      }
+    };
+
+    fetchUserDetails();
+  }, []);
 
   const totalRequests = completedRequests.length;
   const completedRequestsCount = completedRequests.filter(
@@ -99,11 +125,11 @@ const RequestPage = ({ company, dealer }) => {
           <div className="flex justify-between">
             <div>
               <p className="text-md">Company</p>
-              <p>{company?.companyName || "N/A"}</p>
+              <p>{userDetails?.companyName || "N/A"}</p>
             </div>
             <div>
               <p className="text-md">Dealer</p>
-              <p>{dealer?.name || "N/A"}</p>
+              <p>{userDetails?.dealerName || "N/A"}</p>
             </div>
             <div>
               <p className="text-md">Total Requests</p>

@@ -37,7 +37,7 @@ const RequestDetailPage = () => {
           fetch(`${backendUrl}/lotStatus/${id}`, {
             headers: { Authorization: `Bearer ${token}` },
           }),
-          fetch(`${backendUrl}/other/${id}`, {
+          fetch(`${backendUrl}/other/fetchLot/${id}`, {
             headers: { Authorization: `Bearer ${token}` },
           }),
         ]);
