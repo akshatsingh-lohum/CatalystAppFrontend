@@ -12,6 +12,7 @@ import {
 } from "@/components/ui/select";
 import { DataGrid } from "@mui/x-data-grid";
 import { Plus } from "lucide-react";
+import Link from "next/link";
 import { useState } from "react";
 
 const STAGE = {
@@ -56,8 +57,19 @@ const completedRequests = [
   },
 ];
 
+const LotIdLink = ({ value, row }) => (
+  <Link href={`/request/${row.id}`} className="text-blue-600 hover:underline">
+    {value}
+  </Link>
+);
+
 const columns = [
-  { field: "lotId", headerName: "Lot ID", flex: 1 },
+  {
+    field: "lotId",
+    headerName: "Lot ID",
+    flex: 1,
+    renderCell: (params) => <LotIdLink {...params} />,
+  },
   { field: "stage", headerName: "Stage", flex: 1 },
   { field: "requestRaiseDate", headerName: "Request Raise Date", flex: 1 },
 ];
