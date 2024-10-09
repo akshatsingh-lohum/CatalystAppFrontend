@@ -71,7 +71,7 @@ const RequestDetailPage = () => {
 
   const updateStageStatus = (currentStage) => {
     const updatedStatus = {};
-    const currentStageIndex = stages.indexOf(currentStage);
+    const currentStageIndex = stages.indexOf(currentStage) - 1;
 
     stages.forEach((stage, index) => {
       updatedStatus[stage] = index <= currentStageIndex;
@@ -86,8 +86,7 @@ const RequestDetailPage = () => {
     // relevant information for each stage based on your application's requirements.
     return (
       <div>
-        <h4 className="text-lg font-semibold mb-2">{selectedStage} Details</h4>
-        <p>Status: {stageStatus[selectedStage] ? "Completed" : "Pending"}</p>
+        <p>{stageStatus[selectedStage] ? "" : "Status: Pending"}</p>
         {/* Add more stage-specific details here */}
       </div>
     );
@@ -103,6 +102,7 @@ const RequestDetailPage = () => {
   if (!lotDetails || !companyDetails) return <div>No data available</div>;
 
   const completedStages = Object.values(stageStatus).filter(Boolean).length;
+  const lotID = lotDetails.lotID;
 
   return (
     <div className="flex flex-col p-4 bg-gray-100 min-h-screen">
@@ -120,7 +120,7 @@ const RequestDetailPage = () => {
             </div>
             <div>
               <p className="text-md font-semibold">Lot ID</p>
-              <p className="text-primary">{id}</p>
+              <p className="text-primary">{lotID}</p>
             </div>
             <div>
               <p className="text-md font-semibold">Completed Stages</p>

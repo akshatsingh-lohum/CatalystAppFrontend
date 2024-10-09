@@ -26,36 +26,7 @@ const STAGE = {
   REQUEST_COMPLETE: "Request Complete",
 };
 
-const completedRequests = [
-  {
-    id: 1,
-    lotId: "LOT001",
-    status: "Processing",
-    stage: STAGE.REQUEST,
-    requestRaiseDate: "2021-10-01",
-  },
-  {
-    id: 2,
-    lotId: "LOT002",
-    status: "Processing",
-    stage: STAGE.SECURITY_CHECK,
-    requestRaiseDate: "2021-10-01",
-  },
-  {
-    id: 3,
-    lotId: "LOT003",
-    status: "Processing",
-    stage: STAGE.WAREHOUSE,
-    requestRaiseDate: "2021-10-01",
-  },
-  {
-    id: 8,
-    lotId: "LOT008",
-    status: "Completed",
-    stage: STAGE.REQUEST_COMPLETE,
-    requestRaiseDate: "2021-10-04",
-  },
-];
+// createdAt
 
 const LotIdLink = ({ value, row }) => (
   <Link href={`/request/${row.id}`} className="text-blue-600 hover:underline">
@@ -65,18 +36,19 @@ const LotIdLink = ({ value, row }) => (
 
 const columns = [
   {
-    field: "lotId",
+    field: "lotID",
     headerName: "Lot ID",
     flex: 1,
     renderCell: (params) => <LotIdLink {...params} />,
   },
   { field: "stage", headerName: "Stage", flex: 1 },
-  { field: "requestRaiseDate", headerName: "Request Raise Date", flex: 1 },
+  { field: "createdAt", headerName: "Request Raise Date", flex: 1 },
 ];
 
 const RequestPage = ({ company, dealer }) => {
   const [stageFilter, setStageFilter] = useState("ALL");
   const [userDetails, setUserDetails] = useState(null);
+  const [allRequests, setAllRequests] = useState([]);
 
   useEffect(() => {
     const backendUrl =
@@ -103,17 +75,48 @@ const RequestPage = ({ company, dealer }) => {
     fetchUserDetails();
   }, []);
 
-  const totalRequests = completedRequests.length;
-  const completedRequestsCount = completedRequests.filter(
-    (req) => req.status === "Completed"
+  useEffect(() => {
+    const fetchRequests = async () => {
+      const backendUrl =
+        process.env.NEXT_PUBLIC_API_URL || "http://localhost:3002";
+      const token = localStorage.getItem("token");
+
+      try {
+        const response = await fetch(`${backendUrl}/lotStatus`, {
+          headers: {
+            Authorization: `Bearer ${token}`,
+            "Content-Type": "application/json",
+          },
+        });
+
+        if (!response.ok) {
+          throw new Error("Failed to fetch requests");
+        }
+
+        const data = await response.json();
+        console.log("Page: request/[id]/page.jsx data: ", data);
+        setAllRequests(data);
+      } catch (error) {
+        console.error("Error fetching requests:", error);
+      }
+    };
+
+    fetchRequests();
+  }, []);
+
+  const totalRequests = allRequests.length;
+  console.log("All Requests:", allRequests);
+
+  const completedRequestsCount = allRequests.filter(
+    (req) => req.status === "COMPLETED"
   ).length;
 
   const stageCounts = Object.values(STAGE).reduce((acc, stage) => {
-    acc[stage] = completedRequests.filter((req) => req.stage === stage).length;
+    acc[stage] = allRequests.filter((req) => req.stage === stage).length;
     return acc;
   }, {});
 
-  const filteredRequests = completedRequests.filter(
+  const filteredRequests = allRequests.filter(
     (request) => stageFilter === "ALL" || request.stage === stageFilter
   );
 
