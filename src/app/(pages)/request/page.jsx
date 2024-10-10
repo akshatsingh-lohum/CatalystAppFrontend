@@ -2,6 +2,15 @@
 
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
 import { Progress } from "@/components/ui/progress";
 import {
   Select,
@@ -50,6 +59,14 @@ const RequestPage = ({ company, dealer }) => {
   const [stageFilter, setStageFilter] = useState("ALL");
   const [userDetails, setUserDetails] = useState(null);
   const [allRequests, setAllRequests] = useState([]);
+  const [openDialog, setOpenDialog] = useState(false);
+  const [formData, setFormData] = useState({
+    lotWeightKg: "",
+    catalystName: "",
+    catalystPercent: "",
+    catalystWeight: "",
+    notes: "",
+  });
 
   useEffect(() => {
     const backendUrl =
@@ -64,9 +81,6 @@ const RequestPage = ({ company, dealer }) => {
           throw new Error("Failed to fetch user details");
         }
         const data = await response.json();
-        console.log(
-          `Page: request/[id]/page.jsx data: Company ${data.companyId} , ${data.companyName}, Dealer - ${data.dealerId} , ${data.dealerName}`
-        );
         setUserDetails(data);
       } catch (error) {
         console.error("Error fetching user details:", error);
@@ -95,7 +109,6 @@ const RequestPage = ({ company, dealer }) => {
         }
 
         const data = await response.json();
-        console.log("Page: request/[id]/page.jsx data: ", data);
         setAllRequests(data);
       } catch (error) {
         console.error("Error fetching requests:", error);
@@ -105,8 +118,68 @@ const RequestPage = ({ company, dealer }) => {
     fetchRequests();
   }, []);
 
+  const handleOpenDialog = () => {
+    setOpenDialog(true);
+  };
+
+  const handleCloseDialog = () => {
+    setOpenDialog(false);
+    setFormData({
+      lotWeightKg: "",
+      catalystName: "",
+      catalystPercent: "",
+      catalystWeight: "",
+      notes: "",
+    });
+  };
+
+  const handleInputChange = (e) => {
+    setFormData({
+      ...formData,
+      [e.target.name]: e.target.value,
+    });
+  };
+
+  const handleSubmit = async () => {
+    const backendUrl =
+      process.env.NEXT_PUBLIC_API_URL || "http://localhost:3002";
+    const token = localStorage.getItem("token");
+    try {
+      const response = await fetch(`${backendUrl}/request`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({
+          ...formData,
+          userId: userDetails.userId,
+          companyId: userDetails.companyId,
+          dealerId: userDetails.dealerId,
+        }),
+      });
+
+      if (!response.ok) throw new Error("Failed to create new lot request");
+
+      // Refresh the requests list
+      const updatedResponse = await fetch(`${backendUrl}/lotStatus`, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+          "Content-Type": "application/json",
+        },
+      });
+      if (updatedResponse.ok) {
+        const updatedData = await updatedResponse.json();
+        setAllRequests(updatedData);
+      }
+
+      handleCloseDialog();
+    } catch (error) {
+      console.error("Error creating new lot request:", error);
+    }
+  };
+
   const totalRequests = allRequests.length;
-  console.log("All Requests:", allRequests);
 
   const REQUEST_COMPLETE_STAGE = Object.keys(STAGE).find(
     (key) => STAGE[key] === "Request Complete"
@@ -120,8 +193,6 @@ const RequestPage = ({ company, dealer }) => {
     acc[STAGE[stage]] = allRequests.filter((req) => req.stage === stage).length;
     return acc;
   }, {});
-
-  console.log("Stage Counts:", stageCounts);
 
   const filteredRequests = allRequests.filter(
     (request) => stageFilter === "ALL" || request.stage === stageFilter
@@ -151,7 +222,7 @@ const RequestPage = ({ company, dealer }) => {
             </div>
           </div>
           <div className="mt-6 text-right">
-            <Button size="sm">
+            <Button size="sm" onClick={handleOpenDialog}>
               <Plus className="mr-2 h-4 w-4" /> New Lot Request
             </Button>
           </div>
@@ -203,6 +274,89 @@ const RequestPage = ({ company, dealer }) => {
           </CardContent>
         </Card>
       </div>
+
+      {/* Add Request Dialog */}
+      <Dialog open={openDialog} onOpenChange={setOpenDialog}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>New Lot Request</DialogTitle>
+            <DialogDescription>
+              Enter the details for the new lot request below.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="grid gap-4 py-4">
+            <div className="grid grid-cols-4 items-center gap-4">
+              <label htmlFor="lotWeightKg" className="text-right">
+                Lot Weight (kg)
+              </label>
+              <Input
+                id="lotWeightKg"
+                name="lotWeightKg"
+                type="number"
+                value={formData.lotWeightKg}
+                onChange={handleInputChange}
+                className="col-span-3"
+              />
+            </div>
+            <div className="grid grid-cols-4 items-center gap-4">
+              <label htmlFor="catalystName" className="text-right">
+                Catalyst Name
+              </label>
+              <Input
+                id="catalystName"
+                name="catalystName"
+                value={formData.catalystName}
+                onChange={handleInputChange}
+                className="col-span-3"
+              />
+            </div>
+            <div className="grid grid-cols-4 items-center gap-4">
+              <label htmlFor="catalystPercent" className="text-right">
+                Catalyst Percent
+              </label>
+              <Input
+                id="catalystPercent"
+                name="catalystPercent"
+                type="number"
+                value={formData.catalystPercent}
+                onChange={handleInputChange}
+                className="col-span-3"
+              />
+            </div>
+            <div className="grid grid-cols-4 items-center gap-4">
+              <label htmlFor="catalystWeight" className="text-right">
+                Catalyst Weight
+              </label>
+              <Input
+                id="catalystWeight"
+                name="catalystWeight"
+                type="number"
+                value={formData.catalystWeight}
+                onChange={handleInputChange}
+                className="col-span-3"
+              />
+            </div>
+            <div className="grid grid-cols-4 items-center gap-4">
+              <label htmlFor="notes" className="text-right">
+                Notes
+              </label>
+              <Input
+                id="notes"
+                name="notes"
+                value={formData.notes}
+                onChange={handleInputChange}
+                className="col-span-3"
+              />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button onClick={handleCloseDialog} variant="outline">
+              Cancel
+            </Button>
+            <Button onClick={handleSubmit}>Create Request</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };
