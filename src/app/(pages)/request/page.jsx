@@ -26,10 +26,11 @@ const STAGE = {
   REQUEST_COMPLETE: "Request Complete",
 };
 
-// createdAt
-
 const LotIdLink = ({ value, row }) => (
-  <Link href={`/request/${row.id}`} className="text-blue-600 hover:underline">
+  <Link
+    href={`/request/${row.lotID}`}
+    className="text-blue-600 hover:underline"
+  >
     {value}
   </Link>
 );
@@ -107,14 +108,20 @@ const RequestPage = ({ company, dealer }) => {
   const totalRequests = allRequests.length;
   console.log("All Requests:", allRequests);
 
+  const REQUEST_COMPLETE_STAGE = Object.keys(STAGE).find(
+    (key) => STAGE[key] === "Request Complete"
+  );
+
   const completedRequestsCount = allRequests.filter(
-    (req) => req.status === "COMPLETED"
+    (req) => req.stage === REQUEST_COMPLETE_STAGE
   ).length;
 
-  const stageCounts = Object.values(STAGE).reduce((acc, stage) => {
-    acc[stage] = allRequests.filter((req) => req.stage === stage).length;
+  const stageCounts = Object.keys(STAGE).reduce((acc, stage) => {
+    acc[STAGE[stage]] = allRequests.filter((req) => req.stage === stage).length;
     return acc;
   }, {});
+
+  console.log("Stage Counts:", stageCounts);
 
   const filteredRequests = allRequests.filter(
     (request) => stageFilter === "ALL" || request.stage === stageFilter
